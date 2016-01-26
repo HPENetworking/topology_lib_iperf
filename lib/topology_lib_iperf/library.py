@@ -22,10 +22,12 @@ topology_lib_iperf communication library implementation.
 from __future__ import unicode_literals, absolute_import
 from __future__ import print_function, division
 
+from topology.libraries.utils import stateprovider
+
 from .parser import parse_pid, parse_iperf_server, parse_iperf_client
 
 
-class ServerState(object):
+class IperfServerState(object):
     """
     State object for the iperf server.
 
@@ -35,7 +37,7 @@ class ServerState(object):
         self.server_pid = server_pid
 
 
-class ClientState(object):
+class IperfClientState(object):
     """
     State object for the iperf client.
 
@@ -45,26 +47,8 @@ class ClientState(object):
         self.client_pid = client_pid
 
 
-def checkstate(stateclass, statename):
-    def decorator(func):
-        def replacement(enode, *args, **kwargs):
-
-            state = getattr(enode, statename, None)
-            if state is None:
-                state = stateclass()
-                setattr(enode, statename, state)
-
-            return func(enode, state, *args, **kwargs)
-
-        replacement.__name__ = func.__name__
-        replacement.__doc__ = func.__doc__
-
-        return replacement
-    return decorator
-
-
-@checkstate(ServerState, '_iperf_server_state')
-def iperf_server_start(enode, state, port, interval=1, udp=False):
+@stateprovider(IperfServerState)
+def server_start(enode, state, port, interval=1, udp=False):
     """
     Start iperf server.
 
@@ -88,8 +72,8 @@ def iperf_server_start(enode, state, port, interval=1, udp=False):
     state.server_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
 
 
-@checkstate(ServerState, '_iperf_server_state')
-def iperf_server_stop(enode, state):
+@stateprovider(IperfServerState)
+def server_stop(enode, state):
     """
     Stop iperf server.
 
@@ -107,8 +91,8 @@ def iperf_server_stop(enode, state):
     )
 
 
-@checkstate(ClientState, '_iperf_client_state')
-def iperf_client_start(
+@stateprovider(IperfClientState)
+def client_start(
         enode, state, server, port,
         interval=1, time=10, udp=None):
     """
@@ -142,8 +126,8 @@ def iperf_client_start(
     state.client_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
 
 
-@checkstate(ClientState, '_iperf_client_state')
-def iperf_client_stop(enode, state):
+@stateprovider(IperfClientState)
+def client_stop(enode, state):
     """
     Stop iperf client.
 
@@ -167,8 +151,8 @@ def iperf_client_stop(enode, state):
 
 
 __all__ = [
-    'iperf_server_start',
-    'iperf_server_stop',
-    'iperf_client_start',
-    'iperf_client_stop'
+    'server_start',
+    'server_stop',
+    'client_start',
+    'client_stop'
 ]
