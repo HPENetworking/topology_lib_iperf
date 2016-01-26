@@ -16,7 +16,7 @@
 # under the License.
 
 """
-iperf library for Topology.
+topology_lib_iperf communication library implementation.
 """
 
 from __future__ import unicode_literals, absolute_import

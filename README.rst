@@ -8,7 +8,7 @@ Linux iperf command Communication Library for the Network Topology Framework.
 Documentation
 =============
 
-    https://github.com/HPENetworking/topology_lib_iperf
+    https://github.com/HPENetworking/topology_lib_iperf/tree/master/doc
 
 
 License

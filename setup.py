@@ -74,7 +74,7 @@ setup(
         'Framework.'
     ),
     long_description=read('README.rst'),
-    url='https://github.com/HPENetworking/topology_lib_iperf',
+    url='https://github.com/HPENetworking/topology_lib_iperf/tree/master/doc',
     keywords='topology_lib_iperf',
 
     classifiers=[

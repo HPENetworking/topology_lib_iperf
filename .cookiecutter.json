@@ -2,9 +2,9 @@
     "author": "Hewlett Packard Enterprise Development LP",
     "email": "hpe-networking@lists.hp.com",
     "repo_url": "https://github.com/HPENetworking/topology_lib_iperf",
-    "doc_url": "https://github.com/HPENetworking/topology_lib_iperf",
+    "doc_url": "https://github.com/HPENetworking/topology_lib_iperf/tree/master/doc",
     "project_name": "iperf Communication Library for Topology",
-    "repo_name": "topology_lib_iperf",
+    "library_name": "topology_lib_iperf",
     "short_description": "Linux iperf command Communication Library for the Network Topology Framework.",
     "year": "2015-2016",
     "version": "0.1.0"
