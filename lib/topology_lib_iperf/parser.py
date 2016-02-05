@@ -83,10 +83,10 @@ def parse_iperf_server(raw_output):
         '(?P<client_port>.*)'
 
     base_result = search(base_info_re, raw_output)
-    if base_result:
-        base_result = base_result.groupdict()
 
-    result.update(base_result)
+    assert base_result
+
+    result.update(base_result.groupdict())
 
     traffic_re = (
         r'sec  (?P<transfer>[.\d]+ .*?)  (?P<bandwidth>[.\d]+ .+)'
@@ -141,10 +141,10 @@ def parse_iperf_client(raw_output):
         '(?P<server_port>.*)'
 
     base_result = search(base_info_re, raw_output)
-    if base_result:
-        base_result = base_result.groupdict()
 
-    result.update(base_result)
+    assert base_result
+
+    result.update(base_result.groupdict())
 
     traffic_re = (
         r'sec  (?P<transfer>[.\d]+ .*?)  (?P<bandwidth>[.\d]+ .+)'
