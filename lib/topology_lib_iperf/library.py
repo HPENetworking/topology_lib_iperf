@@ -31,24 +31,32 @@ class IperfServerState(object):
     """
     State object for the iperf server.
 
-    :param int server_pid: Process id of the running iperf server.
+    :param dict server_pids: Dictionary of process ids of the running iperf
+     servers instances as defined by {instance_id: server_pid} where
+     :param int instance_id: Instance of iperf server and
+     :param int server_pid: PID number of iperf server instance.
     """
-    def __init__(self, server_pid=None):
-        self.server_pid = server_pid
+
+    def __init__(self, server_pids={}):
+        self.server_pids = server_pids
 
 
 class IperfClientState(object):
     """
     State object for the iperf client.
 
-    :param int client_pid: Process id of the running iperf client.
+    :param dict client_pids: Dictionary of process id of the running iperf
+        clients instances as defined by {instance_id: client_pid} where
+     :param int instance_id: Instance of iperf server and
+     :param int client_pid: PID number of iperf server instance.
     """
-    def __init__(self, client_pid=None):
-        self.client_pid = client_pid
+
+    def __init__(self, client_pids={}):
+        self.client_pids = client_pids
 
 
 @stateprovider(IperfServerState)
-def server_start(enode, state, port, interval=1, udp=False):
+def server_start(enode, state, port, interval=1, udp=False, instance_id=None):
     """
     Start iperf server.
 
@@ -57,6 +65,7 @@ def server_start(enode, state, port, interval=1, udp=False):
     :param int port: iperf port to be open
     :param int interval: interval for iperf server to check
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
+    :param int instance_id: Number of iperf server instance    .
     """
     assert port
 
@@ -67,34 +76,45 @@ def server_start(enode, state, port, interval=1, udp=False):
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_server.log &')
+    cmd.append('2>&1 > /tmp/iperf_server')
+    if instance_id is not None:
+        cmd.append('-{}'.format(instance_id))
+    cmd.append('.log &')
 
-    state.server_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
+    state.server_pids[instance_id] = parse_pid(enode(' '.join(cmd),
+                                                     shell='bash'))
 
 
 @stateprovider(IperfServerState)
-def server_stop(enode, state):
+def server_stop(enode, state, instance_id=None):
     """
     Stop iperf server.
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
+    :param int instance_id: Number of iperf server instance.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_server`.
     """
 
-    enode('kill {pid}'.format(pid=state.server_pid), shell='bash')
-    state.server_pid = None
+    enode('kill {pid}'.format(pid=state.server_pids[instance_id]),
+          shell='bash')
+    del state.server_pids[instance_id]
+
+    cmd = 'cat /tmp/iperf_server'
+    if instance_id is not None:
+        cmd.append('-{}'.format(instance_id))
+    cmd.append('.log')
 
     return parse_iperf_server(
-        enode('cat /tmp/iperf_server.log', shell='bash')
+        enode(cmd, shell='bash')
     )
 
 
 @stateprovider(IperfClientState)
 def client_start(
         enode, state, server, port,
-        interval=1, time=10, udp=None):
+        interval=1, time=10, udp=None, instance_id=None):
     """
     Use iperf client.
 
@@ -107,6 +127,7 @@ def client_start(
     :param int interval: interval for iperf server to check
     :param int time: the time iperf client will be running
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
+    :param int instance_id: Number of iperf client instance.
     """
 
     assert server
@@ -121,32 +142,44 @@ def client_start(
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_client.log &')
+    cmd.append('2>&1 > /tmp/iperf_client')
+    if instance_id is not None:
+        cmd.append('-{}'.format(instance_id))
+    cmd.append('.log &')
 
-    state.client_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
+    state.client_pids[instance_id] = parse_pid(enode(' '.join(cmd),
+                                                     shell='bash'))
 
 
 @stateprovider(IperfClientState)
-def client_stop(enode, state):
+def client_stop(enode, state, instance_id=None):
     """
     Stop iperf client.
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
+    :param int instance_id: Number of iperf client instance.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_client`.
     """
 
     pid_check = enode(
-        'ps -a | grep {pid}'.format(pid=state.client_pid), shell='bash'
+        'ps -a | grep {pid}'.format(pid=state.client_pids[instance_id]),
+        shell='bash'
     )
     if 'Done' not in str(pid_check):
-        enode('kill {pid}'.format(pid=state.client_pid), shell='bash')
+        enode('kill {pid}'.format(pid=state.client_pids[instance_id]),
+              shell='bash')
 
-    state.client_pid = None
+    del state.client_pids[instance_id]
+
+    cmd = 'cat /tmp/iperf_client'
+    if instance_id is not None:
+        cmd.append('-{}'.format(instance_id))
+    cmd.append('.log')
 
     return parse_iperf_client(
-        enode('cat /tmp/iperf_client.log', shell='bash')
+        enode(cmd, shell='bash')
     )
 
 
