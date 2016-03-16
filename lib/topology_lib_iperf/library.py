@@ -30,33 +30,23 @@ from .parser import parse_pid, parse_iperf_server, parse_iperf_client
 class IperfServerState(object):
     """
     State object for the iperf server.
-
-    :param dict server_pids: Dictionary of process ids of the running iperf
-     servers instances as defined by {instance_id: server_pid} where
-     :param int instance_id: Instance of iperf server and
-     :param int server_pid: PID number of iperf server instance.
     """
 
-    def __init__(self, server_pids={}):
-        self.server_pids = server_pids
+    def __init__(self):
+        self.server_pids = {}
 
 
 class IperfClientState(object):
     """
     State object for the iperf client.
-
-    :param dict client_pids: Dictionary of process id of the running iperf
-        clients instances as defined by {instance_id: client_pid} where
-     :param int instance_id: Instance of iperf server and
-     :param int client_pid: PID number of iperf server instance.
     """
 
-    def __init__(self, client_pids={}):
-        self.client_pids = client_pids
+    def __init__(self):
+        self.client_pids = {}
 
 
 @stateprovider(IperfServerState)
-def server_start(enode, state, port, interval=1, udp=False, instance_id=None):
+def server_start(enode, state, port, interval=1, udp=False, instance_id=1):
     """
     Start iperf server.
 
@@ -76,17 +66,15 @@ def server_start(enode, state, port, interval=1, udp=False, instance_id=None):
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_server')
-    if instance_id is not None:
-        cmd.append('-{}'.format(instance_id))
-    cmd.append('.log &')
+    cmd.append('2>&1 > /tmp/iperf_server-{}.log &'.format(instance_id))
 
-    state.server_pids[instance_id] = parse_pid(enode(' '.join(cmd),
-                                                     shell='bash'))
+    state.server_pids[instance_id] = parse_pid(
+        enode(' '.join(cmd), shell='bash')
+    )
 
 
 @stateprovider(IperfServerState)
-def server_stop(enode, state, instance_id=None):
+def server_stop(enode, state, instance_id=1):
     """
     Stop iperf server.
 
@@ -97,24 +85,23 @@ def server_stop(enode, state, instance_id=None):
      :func:`topology_lib_iperf.parser.parse_iperf_server`.
     """
 
-    enode('kill {pid}'.format(pid=state.server_pids[instance_id]),
-          shell='bash')
+    enode('kill {pid}'.format(
+        pid=state.server_pids[instance_id]
+    ), shell='bash')
     del state.server_pids[instance_id]
 
-    cmd = 'cat /tmp/iperf_server'
-    if instance_id is not None:
-        cmd.append('-{}'.format(instance_id))
-    cmd.append('.log')
-
     return parse_iperf_server(
-        enode(cmd, shell='bash')
+        enode(
+            'cat /tmp/iperf_server-{}.log'.format(instance_id),
+            shell='bash'
+        )
     )
 
 
 @stateprovider(IperfClientState)
 def client_start(
         enode, state, server, port,
-        interval=1, time=10, udp=None, instance_id=None):
+        interval=1, time=10, udp=None, instance_id=1):
     """
     Use iperf client.
 
@@ -142,17 +129,15 @@ def client_start(
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_client')
-    if instance_id is not None:
-        cmd.append('-{}'.format(instance_id))
-    cmd.append('.log &')
+    cmd.append('2>&1 > /tmp/iperf_client-{}.log &'.format(instance_id))
 
-    state.client_pids[instance_id] = parse_pid(enode(' '.join(cmd),
-                                                     shell='bash'))
+    state.client_pids[instance_id] = parse_pid(
+        enode(' '.join(cmd), shell='bash')
+    )
 
 
 @stateprovider(IperfClientState)
-def client_stop(enode, state, instance_id=None):
+def client_stop(enode, state, instance_id=1):
     """
     Stop iperf client.
 
@@ -173,13 +158,11 @@ def client_stop(enode, state, instance_id=None):
 
     del state.client_pids[instance_id]
 
-    cmd = 'cat /tmp/iperf_client'
-    if instance_id is not None:
-        cmd.append('-{}'.format(instance_id))
-    cmd.append('.log')
-
     return parse_iperf_client(
-        enode(cmd, shell='bash')
+        enode(
+            'cat /tmp/iperf_client-{}.log'.format(instance_id),
+            shell='bash'
+        )
     )
 
 
