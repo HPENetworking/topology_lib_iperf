@@ -52,10 +52,10 @@ def server_start(enode, state, port, interval=1, udp=False, instance_id=1):
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param int port: iperf port to be open
-    :param int interval: interval for iperf server to check
+    :param int port: iperf port to be open.
+    :param int interval: interval for iperf server to check.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
-    :param int instance_id: Number of iperf server instance    .
+    :param int instance_id: Number of iperf server instance.
     """
     assert port
 
@@ -109,10 +109,10 @@ def client_start(
     action is taken for that parameter (left "as-is").
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param server_ip: Server's IP address in the form ``'192.168.1.10'``
-    :param int port: iperf port to be open
-    :param int interval: interval for iperf server to check
-    :param int time: the time iperf client will be running
+    :param server_ip: Server's IP address in the form ``'192.168.1.10'``.
+    :param int port: iperf port to be open.
+    :param int interval: interval for iperf server to check.
+    :param int time: the time iperf client will be running.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
     :param int instance_id: Number of iperf client instance.
     """
