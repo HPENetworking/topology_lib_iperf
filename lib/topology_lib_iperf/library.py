@@ -55,7 +55,7 @@ def server_start(enode, state, port, interval=1, udp=False, instance_id=1):
     :param int port: iperf port to be open.
     :param int interval: interval for iperf server to check.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
-    :param int instance_id: Number of iperf server instance.
+    :param int instance_id: Number of iperf server instance.  Default is 1.
     """
     assert port
 
@@ -80,7 +80,7 @@ def server_stop(enode, state, instance_id=1):
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param int instance_id: Number of iperf server instance.
+    :param int instance_id: Number of iperf server instance.  Default is 1.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_server`.
     """
@@ -101,7 +101,8 @@ def server_stop(enode, state, instance_id=1):
 @stateprovider(IperfClientState)
 def client_start(
         enode, state, server, port,
-        interval=1, time=10, udp=None, instance_id=1):
+        interval=1, time=10, udp=None,
+        bandwidth=None, instance_id=1):
     """
     Use iperf client.
 
@@ -114,7 +115,10 @@ def client_start(
     :param int interval: interval for iperf server to check.
     :param int time: the time iperf client will be running.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
-    :param int instance_id: Number of iperf client instance.
+    :param str bandwidth: Bandwidth for iperf to use in bits/sec.
+    When used automatically switches to UDP regardless of udp setting.
+    Default is 1Mb/sec.
+    :param int instance_id: Number of iperf client instance. Default is 1.
     """
 
     assert server
@@ -128,6 +132,9 @@ def client_start(
 
     if udp is True:
         cmd.append('-u')
+    
+    if bandwidth is not None:
+        cmd.append('-b {}'.format(bandwidth))
 
     cmd.append('2>&1 > /tmp/iperf_client-{}.log &'.format(instance_id))
 
@@ -143,7 +150,7 @@ def client_stop(enode, state, instance_id=1):
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param int instance_id: Number of iperf client instance.
+    :param int instance_id: Number of iperf client instance.  Default is 1.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_client`.
     """
