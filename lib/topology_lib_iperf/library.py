@@ -27,25 +27,17 @@ from topology.libraries.utils import stateprovider
 from .parser import parse_pid, parse_iperf_server, parse_iperf_client
 
 
-class IperfServerState(object):
+class IperfState(object):
     """
-    State object for the iperf server.
+    State object for the iperf server & client.
     """
 
     def __init__(self):
         self.server_pids = {}
-
-
-class IperfClientState(object):
-    """
-    State object for the iperf client.
-    """
-
-    def __init__(self):
         self.client_pids = {}
 
 
-@stateprovider(IperfServerState)
+@stateprovider(IperfState)
 def server_start(
     enode,
     state,
@@ -83,7 +75,7 @@ def server_start(
     )
 
 
-@stateprovider(IperfServerState)
+@stateprovider(IperfState)
 def server_stop(enode, state, instance_id=1, shell=None):
     """
     Stop iperf server.
@@ -110,7 +102,7 @@ def server_stop(enode, state, instance_id=1, shell=None):
     )
 
 
-@stateprovider(IperfClientState)
+@stateprovider(IperfState)
 def client_start(
         enode,
         state,
@@ -165,7 +157,7 @@ def client_start(
     )
 
 
-@stateprovider(IperfClientState)
+@stateprovider(IperfState)
 def client_stop(enode, state, instance_id=1, shell=None):
     """
     Stop iperf client.
