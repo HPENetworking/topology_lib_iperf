@@ -47,9 +47,14 @@ class IperfClientState(object):
 
 @stateprovider(IperfServerState)
 def server_start(
-                 enode, state, port, interval=1,
-                 udp=False, instance_id=1, shell=None
-                 ):
+    enode,
+    state,
+    port,
+    interval=1,
+    udp=False,
+    instance_id=1,
+    shell=None
+):
     """
     Start iperf server.
 
@@ -59,7 +64,6 @@ def server_start(
     :param int interval: interval for iperf server to check.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
     :param int instance_id: Number of iperf server instance.
-     Default is 1.
     :param str shell: Shell name to execute commands.
      If ``None``, use the Engine Node default shell.
     """
@@ -87,7 +91,6 @@ def server_stop(enode, state, instance_id=1, shell=None):
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
     :param int instance_id: Number of iperf server instance.
-     Default is 1.
     :param str shell: Shell name to execute commands.
      If ``None``, use the Engine Node default shell.
     :return: A dictionary as returned by
@@ -109,10 +112,17 @@ def server_stop(enode, state, instance_id=1, shell=None):
 
 @stateprovider(IperfClientState)
 def client_start(
-        enode, state, server, port,
-        interval=1, time=10, udp=None,
-        bandwidth=None, instance_id=1,
-        shell=None):
+        enode,
+        state,
+        server,
+        port,
+        interval=1,
+        time=10,
+        udp=False,
+        bandwidth=None,
+        instance_id=1,
+        shell=None
+):
     """
     Use iperf client.
 
@@ -126,10 +136,9 @@ def client_start(
     :param int time: the time iperf client will be running.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
     :param str bandwidth: Bandwidth for iperf to use in bits/sec.
-     When used automatically switches to UDP regardless of udp setting.
-     Default is 1Mb/sec.
+     When set automatically switches to UDP regardless of udp value.
+     Default is None for 1Mbit/sec or ``'1M'`` on either UDP or TCP.
     :param int instance_id: Number of iperf client instance.
-     Default is 1.
     :param str shell: Shell name to execute commands.
      If ``None``, use the Engine Node default shell.
     """
@@ -145,7 +154,7 @@ def client_start(
 
     if udp is True:
         cmd.append('-u')
-    
+
     if bandwidth is not None:
         cmd.append('-b {}'.format(bandwidth))
 
@@ -164,7 +173,6 @@ def client_stop(enode, state, instance_id=1, shell=None):
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
     :param int instance_id: Number of iperf client instance.
-     Default is 1.
     :param str shell: Shell name to execute commands.
      If ``None``, use the Engine Node default shell.
     :return: A dictionary as returned by
