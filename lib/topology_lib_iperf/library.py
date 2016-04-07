@@ -27,36 +27,37 @@ from topology.libraries.utils import stateprovider
 from .parser import parse_pid, parse_iperf_server, parse_iperf_client
 
 
-class IperfServerState(object):
+class IperfState(object):
     """
-    State object for the iperf server.
-
-    :param int server_pid: Process id of the running iperf server.
+    State object for the iperf server & client.
     """
-    def __init__(self, server_pid=None):
-        self.server_pid = server_pid
+
+    def __init__(self):
+        self.server_pids = {}
+        self.client_pids = {}
 
 
-class IperfClientState(object):
-    """
-    State object for the iperf client.
-
-    :param int client_pid: Process id of the running iperf client.
-    """
-    def __init__(self, client_pid=None):
-        self.client_pid = client_pid
-
-
-@stateprovider(IperfServerState)
-def server_start(enode, state, port, interval=1, udp=False):
+@stateprovider(IperfState)
+def server_start(
+    enode,
+    state,
+    port,
+    interval=1,
+    udp=False,
+    instance_id=1,
+    shell=None
+):
     """
     Start iperf server.
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param int port: iperf port to be open
-    :param int interval: interval for iperf server to check
+    :param int port: iperf port to be open.
+    :param int interval: interval for iperf server to check.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
+    :param int instance_id: Number of iperf server instance.
+    :param str shell: Shell name to execute commands.
+     If ``None``, use the Engine Node default shell.
     """
     assert port
 
@@ -67,34 +68,53 @@ def server_start(enode, state, port, interval=1, udp=False):
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_server.log &')
+    cmd.append('2>&1 > /tmp/iperf_server-{}.log &'.format(instance_id))
 
-    state.server_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
+    state.server_pids[instance_id] = parse_pid(
+        enode(' '.join(cmd), shell=shell)
+    )
 
 
-@stateprovider(IperfServerState)
-def server_stop(enode, state):
+@stateprovider(IperfState)
+def server_stop(enode, state, instance_id=1, shell=None):
     """
     Stop iperf server.
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
+    :param int instance_id: Number of iperf server instance.
+    :param str shell: Shell name to execute commands.
+     If ``None``, use the Engine Node default shell.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_server`.
     """
 
-    enode('kill {pid}'.format(pid=state.server_pid), shell='bash')
-    state.server_pid = None
+    enode('kill {pid}'.format(
+        pid=state.server_pids[instance_id]
+    ), shell=shell)
+    del state.server_pids[instance_id]
 
     return parse_iperf_server(
-        enode('cat /tmp/iperf_server.log', shell='bash')
+        enode(
+            'cat /tmp/iperf_server-{}.log'.format(instance_id),
+            shell=shell
+        )
     )
 
 
-@stateprovider(IperfClientState)
+@stateprovider(IperfState)
 def client_start(
-        enode, state, server, port,
-        interval=1, time=10, udp=None):
+        enode,
+        state,
+        server,
+        port,
+        interval=1,
+        time=10,
+        udp=False,
+        bandwidth=None,
+        instance_id=1,
+        shell=None
+):
     """
     Use iperf client.
 
@@ -102,11 +122,17 @@ def client_start(
     action is taken for that parameter (left "as-is").
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
-    :param server_ip: Server's IP address in the form ``'192.168.1.10'``
-    :param int port: iperf port to be open
-    :param int interval: interval for iperf server to check
-    :param int time: the time iperf client will be running
+    :param server_ip: Server's IP address in the form ``'192.168.1.10'``.
+    :param int port: iperf port to be open.
+    :param int interval: interval for iperf server to check.
+    :param int time: the time iperf client will be running.
     :param bool udp: If it is UDP or TCP. Default is False for TCP.
+    :param str bandwidth: Bandwidth for iperf to use in bits/sec.
+     When set automatically switches to UDP regardless of udp value.
+     Default is None for 1Mbit/sec or ``'1M'`` on either UDP or TCP.
+    :param int instance_id: Number of iperf client instance.
+    :param str shell: Shell name to execute commands.
+     If ``None``, use the Engine Node default shell.
     """
 
     assert server
@@ -121,32 +147,45 @@ def client_start(
     if udp is True:
         cmd.append('-u')
 
-    cmd.append('2>&1 > /tmp/iperf_client.log &')
+    if bandwidth is not None:
+        cmd.append('-b {}'.format(bandwidth))
 
-    state.client_pid = parse_pid(enode(' '.join(cmd), shell='bash'))
+    cmd.append('2>&1 > /tmp/iperf_client-{}.log &'.format(instance_id))
+
+    state.client_pids[instance_id] = parse_pid(
+        enode(' '.join(cmd), shell=shell)
+    )
 
 
-@stateprovider(IperfClientState)
-def client_stop(enode, state):
+@stateprovider(IperfState)
+def client_stop(enode, state, instance_id=1, shell=None):
     """
     Stop iperf client.
 
     :param enode: Engine node to communicate with.
     :type enode: topology.platforms.base.BaseNode
+    :param int instance_id: Number of iperf client instance.
+    :param str shell: Shell name to execute commands.
+     If ``None``, use the Engine Node default shell.
     :return: A dictionary as returned by
      :func:`topology_lib_iperf.parser.parse_iperf_client`.
     """
 
     pid_check = enode(
-        'ps -a | grep {pid}'.format(pid=state.client_pid), shell='bash'
+        'ps -a | grep {pid}'.format(pid=state.client_pids[instance_id]),
+        shell=shell
     )
     if 'Done' not in str(pid_check):
-        enode('kill {pid}'.format(pid=state.client_pid), shell='bash')
+        enode('kill {pid}'.format(pid=state.client_pids[instance_id]),
+              shell=shell)
 
-    state.client_pid = None
+    del state.client_pids[instance_id]
 
     return parse_iperf_client(
-        enode('cat /tmp/iperf_client.log', shell='bash')
+        enode(
+            'cat /tmp/iperf_client-{}.log'.format(instance_id),
+            shell=shell
+        )
     )
 
 
