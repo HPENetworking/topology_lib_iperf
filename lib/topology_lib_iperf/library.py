@@ -89,7 +89,7 @@ def server_stop(enode, state, instance_id=1, shell=None):
      :func:`topology_lib_iperf.parser.parse_iperf_server`.
     """
 
-    enode('kill {pid}'.format(
+    enode('kill -9 {pid}'.format(
         pid=state.server_pids[instance_id]
     ), shell=shell)
     del state.server_pids[instance_id]
@@ -176,7 +176,7 @@ def client_stop(enode, state, instance_id=1, shell=None):
         shell=shell
     )
     if 'Done' not in str(pid_check):
-        enode('kill {pid}'.format(pid=state.client_pids[instance_id]),
+        enode('kill -9 {pid}'.format(pid=state.client_pids[instance_id]),
               shell=shell)
 
     del state.client_pids[instance_id]
